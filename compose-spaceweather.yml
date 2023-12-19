@@ -1,0 +1,53 @@
+volumes:
+  spaceweather_db_data:
+  spaceweather_db_tmp:
+
+services:
+  spaceweather:
+    container_name: spaceweather
+    build:
+      context: ../space-weather
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: 10m
+    environment:
+      ConnectionStrings__SpaceWeather: Server=spaceweather-db;Port=3306;Database=spaceweather;UID=spaceweather;PWD=${SPACEWEATHER_DB_PASSWORD}
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      spaceweather-db:
+        condition: service_healthy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=home-server_frontend
+      - traefik.http.routers.spaceweather.rule=Host(`spaceweather.${DNS_SUFFIX}`)
+      - traefik.http.routers.spaceweather.entrypoints=web
+      
+  spaceweather-db:
+    container_name: spaceweather-db
+    image: 'mariadb:11.0.2'
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: 10m
+    volumes:
+      - 'spaceweather_db_data:/var/lib/mysql'
+      - 'spaceweather_db_tmp:/tmp/mariadb'
+    environment:
+      MARIADB_ROOT_PASSWORD: '${SPACEWEATHER_DB_ROOT_PASSWORD}'
+      MARIADB_DATABASE: spaceweather
+      MARIADB_USER: spaceweather
+      MARIADB_PASSWORD: '${SPACEWEATHER_DB_PASSWORD}'
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "healthcheck.sh --connect --innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    labels:
+      - docker-volume-backup.archive-pre=/bin/sh -c 'mariadb-dump --all-databases -u root -p${SPACEWEATHER_DB_ROOT_PASSWORD} > /tmp/mariadb/spaceweather-db.sql'
+      - docker-volume-backup.archive-post=/bin/sh -c 'rm -v /tmp/mariadb/spaceweather-db.sql'

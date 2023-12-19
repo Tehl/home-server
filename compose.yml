@@ -1,0 +1,14 @@
+name: home-server
+
+include:
+  - compose-freshrss.yml
+  - compose-homeassistant.yml
+  - compose-homepage.yml
+  - compose-pihole.yml
+  - compose-proxy.yml
+  - compose-spaceweather.yml
+  - compose-backup.yml
+
+networks:
+  frontend:
+  backend:

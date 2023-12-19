@@ -1,0 +1,109 @@
+volumes:
+  homeassistant_config:
+  homeassistant_db_data:
+  homeassistant_db_tmp:
+  homeassistant_influxdb_data:
+  homeassistant_influxdb_config:
+  homeassistant_influxdb_tmp:
+  mosquitto:
+
+services:
+  homeassistant:
+    container_name: homeassistant
+    image: 'ghcr.io/home-assistant/home-assistant:2023.8.2'
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: 10m
+    volumes:
+      - 'homeassistant_config:/config'
+      - '/etc/localtime:/etc/localtime:ro'
+    ports:
+      - '8123:8123'
+    environment:
+      - TZ=Europe/London
+    privileged: true
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      - homeassistant-db
+      - homeassistant-influxdb
+      - mosquitto
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=home-server_frontend
+      - traefik.http.routers.homeassistant.rule=Host(`homeassistant.${DNS_SUFFIX}`)
+      - traefik.http.routers.homeassistant.entrypoints=web
+      - traefik.http.services.homeassistant.loadbalancer.server.port=8123
+
+  homeassistant-db:
+    container_name: homeassistant-db
+    image: 'mariadb:11.0.2'
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: 10m
+    volumes:
+      - 'homeassistant_db_data:/var/lib/mysql'
+      - 'homeassistant_db_tmp:/tmp/mariadb'
+    environment:
+      MARIADB_ROOT_PASSWORD: '${HOMEASSISTANT_DB_ROOT_PASSWORD}'
+      MARIADB_DATABASE: homeassistant
+      MARIADB_USER: homeassistant
+      MARIADB_PASSWORD: '${HOMEASSISTANT_DB_PASSWORD}'
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "healthcheck.sh --connect --innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    labels:
+      - docker-volume-backup.archive-pre=/bin/sh -c 'mariadb-dump --all-databases -u root -p${HOMEASSISTANT_DB_ROOT_PASSWORD} > /tmp/mariadb/homeassistant-db.sql'
+      - docker-volume-backup.archive-post=/bin/sh -c 'rm -v /tmp/mariadb/homeassistant-db.sql'
+
+  homeassistant-influxdb:
+    container_name: homeassistant-influxdb
+    image: 'influxdb:2.7.1'
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: 10m
+    volumes:
+      - 'homeassistant_influxdb_data:/var/lib/influxdb2'
+      - 'homeassistant_influxdb_config:/etc/influxdb2'
+      - 'homeassistant_influxdb_tmp:/tmp/influxdb'
+    ports:
+      - '8086:8086/tcp'
+    environment:
+      TZ: Europe/London
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: homeassistant
+      DOCKER_INFLUXDB_INIT_PASSWORD: '${HOMEASSISTANT_INFLUXDB_PASSWORD}'
+      DOCKER_INFLUXDB_INIT_ORG: krewe
+      DOCKER_INFLUXDB_INIT_BUCKET: homeassistant
+    networks:
+      - backend
+    ulimits:
+      nofile:
+        soft: 32768
+        hard: 32768
+    labels:
+      - docker-volume-backup.archive-pre=/bin/sh -c 'influx backup /tmp/influxdb'
+      - docker-volume-backup.archive-post=/bin/sh -c 'rm -rfv /tmp/influxdb/*'
+
+  mosquitto:
+    container_name: mosquitto
+    image: 'eclipse-mosquitto:2.0.18'
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: 10m
+    volumes:
+      - 'mosquitto:/mosquitto'
+    ports:
+      - '1883:1883'
+      - '9001:9001'
+    networks:
+      - backend

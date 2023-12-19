@@ -1,0 +1,19 @@
+volumes:
+  backup_archive:
+
+services:
+  backup:
+    container_name: backup
+    image: 'offen/docker-volume-backup:v2.31.0'
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: 10m
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock:ro'
+      - 'backup_archive:/archive'
+      - 'freshrss_db_tmp:/backup/freshrss-db:ro'
+      - 'homeassistant_db_tmp:/backup/homeassistant-db:ro'
+      - 'homeassistant_influxdb_tmp:/backup/homeassistant-influxdb:ro'
+    #environment:
+      

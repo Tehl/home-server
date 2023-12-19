@@ -1,0 +1,35 @@
+volumes:
+  pihole_etc:
+  pihole_dnsmasq:
+
+services:
+  pihole:
+    container_name: pihole
+    image: 'pihole/pihole:2023.11.0'
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: 10m
+    volumes:
+      - 'pihole_etc:/etc/pihole'
+      - 'pihole_dnsmasq:/etc/dnsmasq.d'
+    ports:
+      - '53:53/tcp'
+      - '${SERVER_IP}:53:53/udp'
+      - '8000:80/tcp'
+    environment:
+      TZ: Europe/London
+      WEBPASSWORD: '${PIHOLE_WEB_PASSWORD}'
+      VIRTUAL_HOST: pihole.${DNS_SUFFIX}
+      DNSMASQ_LISTENING: all
+      PIHOLE_DNS_: '1.1.1.1'
+      PIHOLE_DOMAIN: lan
+      FTLCONF_LOCAL_IPV4: '${SERVER_IP}'
+    networks:
+      - frontend
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=home-server_frontend
+      - traefik.http.routers.pihole.rule=Host(`pihole.${DNS_SUFFIX}`)
+      - traefik.http.routers.pihole.entrypoints=web
+      - traefik.http.services.pihole.loadbalancer.server.port=80

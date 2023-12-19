@@ -1,0 +1,22 @@
+services:
+  traefik:
+    container_name: traefik
+    image: 'traefik:v2.10.4'
+    command:
+      - '--api.insecure=true'
+      - '--providers.docker=true'
+      - '--providers.docker.exposedbydefault=false'
+      - '--entrypoints.web.address=:80'
+    ports:
+      - '80:80'
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock:ro'
+    networks:
+      - frontend
+    extra_hosts:
+      - host.docker.internal:172.17.0.1
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.api.rule=Host(`proxy.${DNS_SUFFIX}`)
+      - traefik.http.routers.api.service=api@internal
+      - traefik.http.routers.api.entrypoints=web

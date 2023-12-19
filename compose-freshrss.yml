@@ -1,0 +1,71 @@
+volumes:
+  freshrss_data:
+  freshrss_extensions:
+  freshrss_db_data:
+  freshrss_db_tmp:
+
+services:
+  freshrss:
+    container_name: freshrss
+    image: 'freshrss/freshrss:1.22.1'
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: 10m
+    volumes:
+      - 'freshrss_data:/var/www/FreshRSS/data'
+      - 'freshrss_extensions:/var/www/FreshRSS/extensions'
+    ports:
+      - '8001:80'
+    environment:
+      TZ: Europe/London
+      CRON_MIN: '13,43'
+      DB_HOST: freshrss-db
+      DB_BASE: freshrss
+      DB_USER: freshrss
+      DB_PASSWORD: '${FRESHRSS_DB_PASSWORD}'
+      TRUSTED_PROXY: 172.16.0.1/12
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      - freshrss-db
+      - rss-bridge
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=home-server_frontend
+      - traefik.http.routers.freshrss.rule=Host(`rss.${DNS_SUFFIX}`)
+      - traefik.http.routers.freshrss.entrypoints=web
+      
+  freshrss-db:
+    container_name: freshrss-db
+    image: 'mariadb:11.0.2'
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: 10m
+    volumes:
+      - 'freshrss_db_data:/var/lib/mysql'
+      - 'freshrss_db_tmp:/tmp/mariadb'
+    environment:
+      MARIADB_ROOT_PASSWORD: '${FRESHRSS_DB_ROOT_PASSWORD}'
+      MARIADB_DATABASE: freshrss
+      MARIADB_USER: freshrss
+      MARIADB_PASSWORD: '${FRESHRSS_DB_PASSWORD}'
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "healthcheck.sh --connect --innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    labels:
+      - docker-volume-backup.archive-pre=/bin/sh -c 'mariadb-dump --all-databases -u root -p${FRESHRSS_DB_ROOT_PASSWORD} > /tmp/mariadb/freshrss-db.sql'
+      - docker-volume-backup.archive-post=/bin/sh -c 'rm -v /tmp/mariadb/freshrss-db.sql'
+
+  rss-bridge:
+    container_name: rss-bridge
+    image: 'rssbridge/rss-bridge:latest'
+    restart: unless-stopped
+    networks:
+      - backend

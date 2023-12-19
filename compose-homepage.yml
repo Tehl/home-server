@@ -1,0 +1,17 @@
+volumes:
+  homepage_config:
+
+services:
+  homepage:
+    container_name: homepage
+    image: 'ghcr.io/gethomepage/homepage:v0.8.2'
+    volumes:
+      - 'homepage_config:/app/config'
+      - '/var/run/docker.sock:/var/run/docker.sock:ro'
+    networks:
+      - frontend
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=home-server_frontend
+      - traefik.http.routers.homepage.rule=Host(`dashboard.${DNS_SUFFIX}`)
+      - traefik.http.routers.homepage.entrypoints=web
