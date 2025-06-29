@@ -7,7 +7,7 @@ volumes:
 services:
   freshrss:
     container_name: freshrss
-    image: 'freshrss/freshrss:1.26.1'
+    image: 'freshrss/freshrss:1.26.3'
     restart: unless-stopped
     logging:
       options:
