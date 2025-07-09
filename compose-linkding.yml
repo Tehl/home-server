@@ -1,0 +1,62 @@
+volumes:
+  linkding_data:
+  linkding_db_data:
+  linkding_db_tmp:
+
+services:
+  linkding:
+    container_name: linkding
+    image: sissbruecker/linkding:1.41.0
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: 10m
+    volumes:
+      - 'linkding_data:/etc/linkding/data'
+    ports:
+      - '8002:9090'
+    environment:
+      - LD_DB_ENGINE=postgres
+      - LD_DB_DATABASE=linkding
+      - LD_DB_USER=linkding
+      - LD_DB_PASSWORD=${LINKDING_DB_PASSWORD}
+      - LD_DB_HOST=linkding-db
+      - LD_CSRF_TRUSTED_ORIGINS=http://bookmarks.${DNS_SUFFIX},http://${SERVER_IP}
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      linkding-db:
+        condition: service_healthy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=home-server_frontend
+      - traefik.http.routers.linkding.rule=Host(`bookmarks.${DNS_SUFFIX}`)
+      - traefik.http.routers.linkding.entrypoints=web
+      - traefik.http.services.linkding.loadbalancer.server.port=9090
+
+  linkding-db:
+    container_name: linkding-db
+    image: 'postgres:17.5'
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: 10m
+    volumes:
+      - 'linkding_db_data:/var/lib/postgresql/data'
+      - 'linkding_db_tmp:/tmp/postgres'
+    environment:
+      TZ: Europe/London
+      POSTGRES_DB: linkding
+      POSTGRES_USER: linkding
+      POSTGRES_PASSWORD: '${LINKDING_DB_PASSWORD}'
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "sh -c 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB'"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    labels:
+      - docker-volume-backup.archive-pre=/bin/sh -c 'pg_dumpall -u $$POSTGRES_USER > /tmp/postgres/linkding-db.sql'
+      - docker-volume-backup.archive-post=/bin/sh -c 'rm -v /tmp/postgres/linkding-db.sql'
