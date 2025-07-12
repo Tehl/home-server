@@ -58,5 +58,5 @@ services:
       timeout: 5s
       retries: 3
     labels:
-      - docker-volume-backup.archive-pre=/bin/sh -c 'pg_dumpall -u $$POSTGRES_USER > /tmp/postgres/linkding-db.sql'
+      - docker-volume-backup.archive-pre=/bin/sh -c 'pg_dumpall -U $$POSTGRES_USER > /tmp/postgres/linkding-db.sql'
       - docker-volume-backup.archive-post=/bin/sh -c 'rm -v /tmp/postgres/linkding-db.sql'
