@@ -4,7 +4,7 @@ volumes:
 services:
   backup:
     container_name: backup
-    image: 'offen/docker-volume-backup:v2.31.0'
+    image: 'offen/docker-volume-backup:v2.43.4'
     restart: unless-stopped
     logging:
       options:
@@ -16,5 +16,10 @@ services:
       - 'homeassistant_db_tmp:/backup/homeassistant-db:ro'
       - 'linkding_db_tmp:/backup/linkding-db:ro'
       - 'spaceweather_db_tmp:/backup/spaceweather-db:ro'
-    #environment:
+    environment:
+      AWS_S3_BUCKET_NAME: ${BACKUP_AWS_BUCKET}
+      AWS_ACCESS_KEY_ID: ${BACKUP_AWS_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${BACKUP_AWS_SECRET_KEY}
+      AWS_ENDPOINT: s3.${BACKUP_AWS_REGION}.amazonaws.com
+      AWS_STORAGE_CLASS: STANDARD_IA
       
