@@ -14,7 +14,6 @@ services:
       - 'backup_archive:/archive'
       - 'freshrss_db_tmp:/backup/freshrss-db:ro'
       - 'homeassistant_db_tmp:/backup/homeassistant-db:ro'
-      - 'homeassistant_influxdb_tmp:/backup/homeassistant-influxdb:ro'
       - 'linkding_db_tmp:/backup/linkding-db:ro'
       - 'spaceweather_db_tmp:/backup/spaceweather-db:ro'
     #environment:

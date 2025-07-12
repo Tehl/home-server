@@ -60,7 +60,7 @@ services:
       timeout: 5s
       retries: 3
     labels:
-      - docker-volume-backup.archive-pre=/bin/sh -c 'mariadb-dump --all-databases -u root -p${HOMEASSISTANT_DB_ROOT_PASSWORD} > /tmp/mariadb/homeassistant-db.sql'
+      - docker-volume-backup.archive-pre=/bin/sh -c 'mariadb-dump --all-databases -u root -p$$MARIADB_ROOT_PASSWORD > /tmp/mariadb/homeassistant-db.sql'
       - docker-volume-backup.archive-post=/bin/sh -c 'rm -v /tmp/mariadb/homeassistant-db.sql'
 
   homeassistant-influxdb:
@@ -89,9 +89,6 @@ services:
       nofile:
         soft: 32768
         hard: 32768
-    labels:
-      - docker-volume-backup.archive-pre=/bin/sh -c 'influx backup /tmp/influxdb'
-      - docker-volume-backup.archive-post=/bin/sh -c 'rm -rfv /tmp/influxdb/*'
 
   mosquitto:
     container_name: mosquitto

@@ -60,7 +60,7 @@ services:
       timeout: 5s
       retries: 3
     labels:
-      - docker-volume-backup.archive-pre=/bin/sh -c 'mariadb-dump --all-databases -u root -p${FRESHRSS_DB_ROOT_PASSWORD} > /tmp/mariadb/freshrss-db.sql'
+      - docker-volume-backup.archive-pre=/bin/sh -c 'mariadb-dump --all-databases -u root -p$$MARIADB_ROOT_PASSWORD > /tmp/mariadb/freshrss-db.sql'
       - docker-volume-backup.archive-post=/bin/sh -c 'rm -v /tmp/mariadb/freshrss-db.sql'
 
   rss-bridge:
