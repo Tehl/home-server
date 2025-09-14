@@ -1,0 +1,45 @@
+volumes:
+  beszel_hub_data:
+  beszel_agent_data:
+
+services:
+  beszel:
+    image: henrygd/beszel:0.12.7
+    container_name: beszel
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: 10m
+    volumes:
+      - 'beszel_hub_data:/beszel_data'
+      - /var/run/beszel.sock:/var/run/beszel.sock
+    ports:
+      - 8004:8090
+    environment:
+      BESZEL_HUB_APP_URL: http://beszel.${DNS_SUFFIX}
+    networks:
+      - frontend
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=home-server_frontend
+      - traefik.http.routers.beszel.rule=Host(`beszel.${DNS_SUFFIX}`)
+      - traefik.http.routers.beszel.entrypoints=web
+      - traefik.http.services.beszel.loadbalancer.server.port=8090
+
+  beszel-agent:
+    image: henrygd/beszel-agent:0.12.7
+    container_name: beszel-agent
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: 10m
+    network_mode: host
+    volumes:
+      - beszel_agent_data:/var/lib/beszel-agent
+      - /var/run/beszel.sock:/var/run/beszel.sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      LISTEN: /var/run/beszel.sock
+      KEY: '${BESZEL_AGENT_KEY}'
+      TOKEN: '${BESZEL_AGENT_TOKEN}'
+      HUB_URL: http://${SERVER_IP}:8004

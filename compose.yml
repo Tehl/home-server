@@ -1,6 +1,7 @@
 name: home-server
 
 include:
+- compose-beszel.yml
   - compose-freshrss.yml
   - compose-homeassistant.yml
   - compose-homepage.yml
