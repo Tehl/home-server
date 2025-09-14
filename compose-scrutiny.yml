@@ -1,0 +1,69 @@
+volumes:
+  scrutiny_config:
+  scrutiny_influxdb_data:
+  scrutiny_influxdb_config:
+  scrutiny_influxdb_tmp:
+
+services:
+  scrutiny:
+    container_name: scrutiny
+    image: ghcr.io/analogj/scrutiny:v0.8.1-web
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: 10m
+    volumes:
+      - 'scrutiny_config:/opt/scrutiny/config'
+    ports:
+      - '8003:8080'
+    environment:
+      TZ: Europe/London
+      SCRUTINY_WEB_INFLUXDB_HOST: scrutiny-influxdb
+      SCRUTINY_WEB_INFLUXDB_PORT: 8086
+      SCRUTINY_WEB_INFLUXDB_TOKEN: '${SCRUTINY_INFLUXDB_ADMIN_TOKEN}'
+      SCRUTINY_WEB_INFLUXDB_ORG: krewe
+      SCRUTINY_WEB_INFLUXDB_BUCKET: scrutiny
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      - scrutiny-influxdb
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=home-server_frontend
+      - traefik.http.routers.scrutiny.rule=Host(`scrutiny.${DNS_SUFFIX}`)
+      - traefik.http.routers.scrutiny.entrypoints=web
+      - traefik.http.services.scrutiny.loadbalancer.server.port=8080
+
+  scrutiny-influxdb:
+    container_name: scrutiny-influxdb
+    image: 'influxdb:2.7.1'
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: 10m
+    volumes:
+      - 'scrutiny_influxdb_data:/var/lib/influxdb2'
+      - 'scrutiny_influxdb_config:/etc/influxdb2'
+      - 'scrutiny_influxdb_tmp:/tmp/influxdb'
+    ports:
+      - '8087:8086/tcp'
+    environment:
+      TZ: Europe/London
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: scrutiny
+      DOCKER_INFLUXDB_INIT_PASSWORD: '${SCRUTINY_INFLUXDB_PASSWORD}'
+      DOCKER_INFLUXDB_INIT_ORG: krewe
+      DOCKER_INFLUXDB_INIT_BUCKET: scrutiny
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: '${SCRUTINY_INFLUXDB_ADMIN_TOKEN}'
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    ulimits:
+      nofile:
+        soft: 32768
+        hard: 32768
