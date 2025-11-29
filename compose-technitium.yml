@@ -1,0 +1,31 @@
+volumes:
+  technitium_config:
+
+services:
+  technitium:
+    container_name: technitium
+    image: 'technitium/dns-server:14.0.1'
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: 10m
+    volumes:
+      - 'technitium_config:/etc/dns'
+    ports:
+      - '53:53/tcp'
+      - '53:53/udp'
+      - '8005:5380/tcp'
+    environment:
+      TZ: Europe/London
+      DNS_SERVER_DOMAIN: 'dns.${DNS_SUFFIX}'
+      DNS_SERVER_ADMIN_PASSWORD: ${TECHNITIUM_ADMIN_PASSWORD}
+    sysctls:
+      - net.ipv4.ip_local_port_range=1024 65535
+    networks:
+      - frontend
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=home-server_frontend
+      - traefik.http.routers.technitium.rule=Host(`dns.${DNS_SUFFIX}`)
+      - traefik.http.routers.technitium.entrypoints=web
+      - traefik.http.services.technitium.loadbalancer.server.port=5380

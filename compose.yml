@@ -6,10 +6,10 @@ include:
   - compose-homeassistant.yml
   - compose-homepage.yml
   - compose-linkding.yml
-  - compose-pihole.yml
   - compose-proxy.yml
   - compose-scrutiny.yml
   - compose-spaceweather.yml
+  - compose-technitium.yml
   - compose-backup.yml
 
 networks:
