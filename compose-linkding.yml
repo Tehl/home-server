@@ -6,7 +6,7 @@ volumes:
 services:
   linkding:
     container_name: linkding
-    image: sissbruecker/linkding:1.41.0
+    image: sissbruecker/linkding:1.44.1
     restart: unless-stopped
     logging:
       options:
