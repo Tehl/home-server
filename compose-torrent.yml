@@ -25,6 +25,7 @@ services:
       TZ: Europe/London
       VPN_SERVICE_PROVIDER: mullvad
       VPN_TYPE: wireguard
+      SERVER_COUNTRIES: ${VPN_COUNTRIES}
       WIREGUARD_PRIVATE_KEY: ${VPN_PRIVATE_KEY}
       WIREGUARD_ADDRESSES: ${VPN_ADDRESS}
       UPDATER_PERIOD: 24h
@@ -47,6 +48,8 @@ services:
       QBT_LEGAL_NOTICE: confirm
       QBT_VERSION: 5.1.4-1
       QBT_WEBUI_PORT: 8085
+    depends_on:
+      - gluetun
     stop_grace_period: 3m
     tmpfs:
       - /tmp
@@ -75,6 +78,8 @@ services:
       HOME: /config
     networks:
       - frontend
+    depends_on:
+      - qbittorrent
     labels:
       - traefik.enable=true
       - traefik.docker.network=home-server_frontend
