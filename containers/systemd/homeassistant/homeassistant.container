@@ -1,0 +1,28 @@
+[Container]
+ContainerName=homeassistant
+Image=ghcr.io/home-assistant/home-assistant:2026.6.3
+UIDMap=+0:@%U
+LogOpt=max-size=10m
+PublishPort=8123:8123
+Volume=%h/volumes/%N/config:/config:Z
+Volume=/etc/localtime:/etc/localtime:ro
+Environment=TZ=Europe/London
+Network=frontend.network
+Network=backend.network
+Label=traefik.enable=true
+Label=traefik.docker.network=systemd-frontend
+Label=traefik.http.routers.homeassistant.rule=Host(`homeassistant.${DNS_SUFFIX}`)
+Label=traefik.http.routers.homeassistant.entrypoints=web
+Label=traefik.http.services.homeassistant.loadbalancer.server.port=8123
+
+[Unit]
+Requires=homeassistant-db.service mosquitto.service
+After=homeassistant-db.service mosquitto.service
+
+[Service]
+Restart=always
+EnvironmentFile=%h/srv/apps/.env
+ExecStartPre=mkdir -p %h/volumes/%N/config
+
+[Install]
+WantedBy=default.target

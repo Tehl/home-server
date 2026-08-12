@@ -1,0 +1,26 @@
+[Container]
+ContainerName=gluetun
+Image=docker.io/qmcgaw/gluetun:v3.40.3
+UIDMap=+0:@%U
+LogOpt=max-size=10m
+PublishPort=${TORRENT_PORT}:${TORRENT_PORT}/tcp
+PublishPort=${TORRENT_PORT}:${TORRENT_PORT}/udp
+Volume=%h/volumes/%N/data:/gluetun:Z
+Environment=TZ=Europe/London
+Environment=VPN_SERVICE_PROVIDER=mullvad
+Environment=VPN_TYPE=wireguard
+Environment=SERVER_COUNTRIES=${VPN_COUNTRIES}
+Environment=WIREGUARD_PRIVATE_KEY=${VPN_PRIVATE_KEY}
+Environment=WIREGUARD_ADDRESSES=${VPN_ADDRESS}
+Environment=UPDATER_PERIOD=24h
+AddCapability=NET_ADMIN
+AddDevice=/dev/net/tun:/dev/net/tun
+Network=frontend.network
+
+[Service]
+Restart=always
+EnvironmentFile=%h/srv/apps/.env
+ExecStartPre=mkdir -p %h/volumes/%N/data
+
+[Install]
+WantedBy=default.target

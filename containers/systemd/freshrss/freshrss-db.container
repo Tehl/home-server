@@ -1,0 +1,30 @@
+[Container]
+ContainerName=freshrss-db
+Image=docker.io/library/mariadb:11.0.2
+UIDMap=+0:@%U
+LogOpt=max-size=10m
+StopTimeout=60
+Volume=%h/volumes/%N/data:/var/lib/mysql:Z
+Volume=%h/volumes/%N/tmp:/tmp/mariadb:Z
+Environment=TZ=Europe/London
+Environment=MARIADB_ROOT_PASSWORD=${FRESHRSS_DB_ROOT_PASSWORD}
+Environment=MARIADB_DATABASE=freshrss
+Environment=MARIADB_USER=freshrss
+Environment=MARIADB_PASSWORD=${FRESHRSS_DB_PASSWORD}
+Network=backend.network
+Notify=healthy
+HealthCmd=healthcheck.sh --connect --innodb_initialized
+HealthInterval=10s
+HealthRetries=3
+HealthTimeout=5s
+Label=docker-volume-backup.archive-pre=/bin/sh -c 'mariadb-dump --all-databases -u root -p$$MARIADB_ROOT_PASSWORD > /tmp/mariadb/freshrss-db.sql'
+Label=docker-volume-backup.archive-post=/bin/sh -c 'rm -v /tmp/mariadb/freshrss-db.sql'
+
+[Service]
+Restart=always
+EnvironmentFile=%h/srv/apps/.env
+ExecStartPre=mkdir -p %h/volumes/%N/data
+ExecStartPre=mkdir -p %h/volumes/%N/tmp
+
+[Install]
+WantedBy=default.target

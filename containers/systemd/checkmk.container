@@ -1,0 +1,26 @@
+[Container]
+ContainerName=checkmk
+Image=docker.io/checkmk/check-mk-community:2.5.0-2026.07.11
+UIDMap=+0:@%U
+LogOpt=max-size=10m
+PublishPort=8006:5000
+PublishPort=8007:8000
+Volume=%h/volumes/%N/sites:/omd/sites:Z
+Environment=TZ=Europe/London
+Environment=CMK_SITE_ID=${CHECKMK_SITE}
+Environment=CMK_PASSWORD=${CHECKMK_PASSWORD}
+AddCapability=NET_RAW
+AddCapability=SYS_PTRACE
+Network=frontend.network
+Label=traefik.enable=true
+Label=traefik.docker.network=systemd-frontend
+Label=traefik.http.routers.checkmk.rule=Host(`monitoring.${DNS_SUFFIX}`)
+Label=traefik.http.routers.checkmk.entrypoints=web
+
+[Service]
+Restart=always
+EnvironmentFile=%h/srv/apps/.env
+ExecStartPre=mkdir -p %h/volumes/%N/sites
+
+[Install]
+WantedBy=default.target

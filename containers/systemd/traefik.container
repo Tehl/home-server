@@ -1,0 +1,26 @@
+[Container]
+ContainerName=traefik
+Image=docker.io/library/traefik:v3.7.5
+UIDMap=+0:@%U
+LogOpt=max-size=10m
+Exec=--api.insecure=true --providers.docker=true --providers.docker.exposedbydefault=false --entrypoints.web.address=:80
+Volume=%t/podman/podman.sock:/var/run/docker.sock:ro
+SecurityLabelDisable=true
+Environment=TZ=Europe/London
+Network=frontend.network
+Label=traefik.enable=true
+Label=traefik.http.routers.api.rule=Host(`proxy.${DNS_SUFFIX}`)
+Label=traefik.http.routers.api.service=api@internal
+Label=traefik.http.routers.api.entrypoints=web
+
+[Service]
+Sockets=http.socket
+Restart=always
+EnvironmentFile=%h/srv/apps/.env
+
+[Unit]
+Requires=http.socket podman.socket
+After=http.socket podman.socket
+
+[Install]
+WantedBy=default.target

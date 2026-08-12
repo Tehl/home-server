@@ -1,0 +1,29 @@
+[Container]
+ContainerName=linkding-db
+Image=docker.io/library/postgres:17.5
+UIDMap=+0:@%U
+LogOpt=max-size=10m
+StopTimeout=60
+Volume=%h/volumes/%N/data:/var/lib/postgresql/data:Z
+Volume=%h/volumes/%N/tmp:/tmp/postgres:Z
+Environment=TZ=Europe/London
+Environment=POSTGRES_DB=linkding
+Environment=POSTGRES_USER=linkding
+Environment=POSTGRES_PASSWORD=${LINKDING_DB_PASSWORD}
+Network=backend.network
+Notify=healthy
+HealthCmd=sh -c 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB'
+HealthInterval=10s
+HealthRetries=3
+HealthTimeout=5s
+Label=docker-volume-backup.archive-pre=/bin/sh -c 'pg_dumpall -U $$POSTGRES_USER > /tmp/postgres/linkding-db.sql'
+Label=docker-volume-backup.archive-post=/bin/sh -c 'rm -v /tmp/postgres/linkding-db.sql'
+
+[Service]
+Restart=always
+EnvironmentFile=%h/srv/apps/.env
+ExecStartPre=mkdir -p %h/volumes/%N/data
+ExecStartPre=mkdir -p %h/volumes/%N/tmp
+
+[Install]
+WantedBy=default.target

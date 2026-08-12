@@ -1,0 +1,21 @@
+[Container]
+ContainerName=homepage
+Image=ghcr.io/gethomepage/homepage:v1.13.2
+UIDMap=+0:@%U
+LogOpt=max-size=10m
+Volume=%h/volumes/%N/config:/app/config:Z
+Environment=TZ=Europe/London
+Environment=HOMEPAGE_ALLOWED_HOSTS=dashboard.${DNS_SUFFIX}
+Network=frontend.network
+Label=traefik.enable=true
+Label=traefik.docker.network=systemd-frontend
+Label=traefik.http.routers.homepage.rule=Host(`dashboard.${DNS_SUFFIX}`)
+Label=traefik.http.routers.homepage.entrypoints=web
+
+[Service]
+Restart=always
+EnvironmentFile=%h/srv/apps/.env
+ExecStartPre=mkdir -p %h/volumes/%N/config
+
+[Install]
+WantedBy=default.target

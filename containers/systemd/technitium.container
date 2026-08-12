@@ -1,0 +1,29 @@
+[Container]
+ContainerName=technitium
+Image=docker.io/technitium/dns-server:15.3.0
+UIDMap=+0:@%U
+LogOpt=max-size=10m
+PublishPort=${SERVER_IP}:53:53/tcp
+PublishPort=${SERVER_IP}:53:53/udp
+PublishPort=127.0.0.1:53:53/tcp
+PublishPort=127.0.0.1:53:53/udp
+PublishPort=8005:5380/tcp
+Volume=%h/volumes/%N/config:/etc/dns:Z
+Environment=TZ=Europe/London
+Environment=DNS_SERVER_DOMAIN=dns.${DNS_SUFFIX}
+Environment=DNS_SERVER_ADMIN_PASSWORD=${TECHNITIUM_ADMIN_PASSWORD}
+Sysctl="net.ipv4.ip_local_port_range=1024 65535"
+Network=frontend.network
+Label=traefik.enable=true
+Label=traefik.docker.network=systemd-frontend
+Label=traefik.http.routers.technitium.rule=Host(`dns.${DNS_SUFFIX}`)
+Label=traefik.http.routers.technitium.entrypoints=web
+Label=traefik.http.services.technitium.loadbalancer.server.port=5380
+
+[Service]
+Restart=always
+EnvironmentFile=%h/srv/apps/.env
+ExecStartPre=mkdir -p %h/volumes/%N/config
+
+[Install]
+WantedBy=default.target

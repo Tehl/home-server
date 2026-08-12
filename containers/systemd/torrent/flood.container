@@ -1,0 +1,30 @@
+[Container]
+ContainerName=flood
+Image=docker.io/jesec/flood:4.16.1
+Exec=--port 3001 --allowedpath /downloads
+UserNS=keep-id:uid=1001,gid=1001
+LogOpt=max-size=10m
+StopTimeout=180
+Volume=%h/volumes/%N/config:/config
+Volume=${TORRENT_DOWNLOAD_PATH}:/downloads
+SecurityLabelDisable=true
+Environment=TZ=Europe/London
+Environment=HOME=/config
+Network=frontend.network
+Label=traefik.enable=true
+Label=traefik.docker.network=home-server_frontend
+Label=traefik.http.routers.flood.rule=Host(`flood.${DNS_SUFFIX}`)
+Label=traefik.http.routers.flood.entrypoints=web
+Label=traefik.http.services.flood.loadbalancer.server.port=3001
+
+[Unit]
+Requires=qbittorrent.service
+After=qbittorrent.service
+
+[Service]
+Restart=always
+EnvironmentFile=%h/srv/apps/.env
+ExecStartPre=mkdir -p %h/volumes/%N/config
+
+[Install]
+WantedBy=default.target

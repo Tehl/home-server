@@ -1,0 +1,35 @@
+[Container]
+ContainerName=qbittorrent
+Image=docker.io/qbittorrentofficial/qbittorrent-nox:5.1.4-1
+UserNS=keep-id:uid=${TORRENT_PUID},gid=${TORRENT_PGID}
+LogOpt=max-size=10m
+StopTimeout=180
+Volume=%h/volumes/%N/config:/config
+Volume=${TORRENT_DOWNLOAD_PATH}:/downloads
+Tmpfs=/tmp
+SecurityLabelDisable=true
+Environment=TZ=Europe/London
+Environment=PUID=${TORRENT_PUID}
+Environment=PGID=${TORRENT_PGID}
+Environment=QBT_LEGAL_NOTICE=confirm
+Environment=QBT_VERSION=5.1.4-1
+Environment=QBT_WEBUI_PORT=8085
+Network=gluetun.container
+HealthCmd=wget --no-verbose --tries=1 --spider http://localhost:8085 || exit 1
+Label=traefik.enable=true
+Label=traefik.docker.network=systemd-frontend
+Label=traefik.http.routers.qbittorrent.rule=Host(`qbittorrent.${DNS_SUFFIX}`)
+Label=traefik.http.routers.qbittorrent.entrypoints=web
+Label=traefik.http.services.qbittorrent.loadbalancer.server.port=8085
+
+[Unit]
+Requires=gluetun.service
+After=gluetun.service
+
+[Service]
+Restart=always
+EnvironmentFile=%h/srv/apps/.env
+ExecStartPre=mkdir -p %h/volumes/%N/config
+
+[Install]
+WantedBy=default.target

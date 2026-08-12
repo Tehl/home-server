@@ -1,0 +1,26 @@
+[Container]
+ContainerName=spaceweather
+Image=localhost/tehl/spaceweather:main
+UIDMap=+0:@%U
+LogOpt=max-size=10m
+Environment=TZ=Europe/London
+Environment=ConnectionStrings__SpaceWeather=Server=spaceweather-db;Port=3306;Database=spaceweather;UID=spaceweather;PWD=${SPACEWEATHER_DB_PASSWORD}
+Network=frontend.network
+Network=backend.network
+Label=traefik.enable=true
+Label=traefik.docker.network=systemd-frontend
+Label=traefik.http.routers.spaceweather.rule=Host(`spaceweather.${DNS_SUFFIX}`)
+Label=traefik.http.routers.spaceweather.entrypoints=web
+
+[Unit]
+Requires=spaceweather-db.service
+After=spaceweather-db.service
+
+[Service]
+Restart=always
+EnvironmentFile=%h/srv/apps/.env
+ExecStartPre=mkdir -p %h/volumes/%N/data
+ExecStartPre=mkdir -p %h/volumes/%N/extensions
+
+[Install]
+WantedBy=default.target
